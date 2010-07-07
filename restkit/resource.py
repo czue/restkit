@@ -55,8 +55,12 @@ class Resource(object):
             if u.username:
                 password = u.password or ""
                 
-                # add filters
-                filters = copy(self.filters)                
+                # add filters, but exclude all the BasicAuth filters, assuming
+                # we want to override them with our URL credentials
+                filters = []
+                for non_basic_auth_filter in [filter for filter in filters \
+                                              if not isinstance(filter, BasicAuth)]:
+                    filters.append(non_basic_auth_filter)
                 filters.append(BasicAuth(u.username, password))
                 client_opts['filters'] = filters
                 
@@ -87,7 +91,6 @@ class Resource(object):
         
         """
         client_opts = self.client_opts.copy()
-        client_opts["filters"] = self.filters
         obj = self.__class__(self.uri, headers=self._headers, 
                         **client_opts)
         return self._set_default_attrs(obj)
@@ -101,8 +104,6 @@ class Resource(object):
         """
 
         client_opts = self.client_opts.copy()
-        client_opts["filters"] = self.filters
-        
         new_uri = util.make_uri(self.uri, path, charset=self.charset, 
                         safe=self.safe, encode_keys=self.encode_keys)
                         
